@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "AI Bek",
+    "subtitle": "Управление задачами стройплощадки"
+  },
+  "nav": {
+    "dashboard": "Дашборд",
+    "newTask": "Новая задача",
+    "voice": "Голос",
+    "team": "Команда",
+    "reports": "Отчёты",
+    "settings": "Настройки"
+  },
+  "dashboard": {
+    "today": "Сегодня",
+    "sendTasks": "Отправить задачи",
+    "total": "Всего",
+    "completed": "Выполнено",
+    "inProgress": "В процессе",
+    "blocked": "Заблокировано",
+    "incomplete": "Не выполнено"
+  },
+  "task": {
+    "title": "Название",
+    "assignee": "Исполнитель",
+    "location": "Локация",
+    "materials": "Материалы",
+    "safetyNotes": "Техника безопасности",
+    "priority": "Приоритет",
+    "priorityHigh": "Высокий",
+    "priorityNormal": "Обычный",
+    "priorityLow": "Низкий",
+    "photoRequired": "Фото обязательно",
+    "timeEstimate": "Оценка времени (ч)",
+    "dependsOn": "Зависит от",
+    "category": "Категория",
+    "create": "Создать задачу",
+    "draft": "Черновик",
+    "sent": "Отправлено",
+    "confirmed": "Принято",
+    "completed": "Выполнено",
+    "problem": "Проблема"
+  },
+  "auth": {
+    "login": "Войти",
+    "email": "Email",
+    "password": "Пароль"
+  }
+}

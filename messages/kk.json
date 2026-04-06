@@ -1,0 +1,49 @@
+{
+  "app": {
+    "title": "AI Bek",
+    "subtitle": "Құрылыс алаңының тапсырма менеджері"
+  },
+  "nav": {
+    "dashboard": "Басты бет",
+    "newTask": "Жаңа тапсырма",
+    "voice": "Дауыс",
+    "team": "Команда",
+    "reports": "Есептер",
+    "settings": "Баптаулар"
+  },
+  "dashboard": {
+    "today": "Бүгін",
+    "sendTasks": "Тапсырмаларды жіберу",
+    "total": "Барлығы",
+    "completed": "Орындалды",
+    "inProgress": "Орындалуда",
+    "blocked": "Бұғатталған",
+    "incomplete": "Орындалмады"
+  },
+  "task": {
+    "title": "Атауы",
+    "assignee": "Орындаушы",
+    "location": "Орны",
+    "materials": "Материалдар",
+    "safetyNotes": "Қауіпсіздік техникасы",
+    "priority": "Маңыздылығы",
+    "priorityHigh": "Жоғары",
+    "priorityNormal": "Қалыпты",
+    "priorityLow": "Төмен",
+    "photoRequired": "Фото міндетті",
+    "timeEstimate": "Уақыт бағасы (сағ)",
+    "dependsOn": "Тәуелді",
+    "category": "Санат",
+    "create": "Тапсырма жасау",
+    "draft": "Жоба",
+    "sent": "Жіберілді",
+    "confirmed": "Қабылданды",
+    "completed": "Орындалды",
+    "problem": "Мәселе"
+  },
+  "auth": {
+    "login": "Кіру",
+    "email": "Email",
+    "password": "Құпия сөз"
+  }
+}
