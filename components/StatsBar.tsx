@@ -20,11 +20,11 @@ export default function StatsBar({ tasks }: { tasks: Task[] }) {
   ];
 
   return (
-    <div className="grid grid-cols-5 gap-2 mb-6">
+    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-6">
       {stats.map((s) => (
-        <div key={s.label} className={`${s.color} rounded-lg p-3 text-center`}>
-          <div className="text-2xl font-bold">{s.value}</div>
-          <div className="text-xs">{s.label}</div>
+        <div key={s.label} className={`${s.color} rounded-lg p-2 sm:p-3 text-center`}>
+          <div className="text-xl sm:text-2xl font-bold">{s.value}</div>
+          <div className="text-xs truncate">{s.label}</div>
         </div>
       ))}
     </div>

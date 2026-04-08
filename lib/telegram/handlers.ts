@@ -3,15 +3,19 @@ import {
   onboardingMessage,
   onboardingCompleteMessage,
   taskMessage,
+  confirmedMessage,
   blockedTaskMessage,
   unlockMessage,
   photoRequestMessage,
   completedMessage,
   completedWithPhotoMessage,
 } from "./messages";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 
-const supabase = createServiceClient();
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // Track users waiting to enter their name (onboarding)
 const awaitingName = new Map<number, string>(); // chatId -> invite_code
@@ -64,9 +68,105 @@ bot.command("start", async (ctx) => {
   await ctx.reply(onboardingMessage());
 });
 
+// --- /brigade command ---
+bot.command("brigade", async (ctx) => {
+  const chatId = ctx.chat.id;
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, project_id, brigade_id, role")
+    .eq("telegram_chat_id", chatId)
+    .single();
+
+  if (!user) {
+    await ctx.reply("Вы не зарегистрированы.");
+    return;
+  }
+
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Almaty" });
+
+  // Get all tasks for the project today
+  const { data: tasks } = await supabase
+    .from("tasks")
+    .select("title, status, assigned_to, assignee:users!tasks_assigned_to_fkey(name)")
+    .eq("project_id", user.project_id)
+    .eq("due_date", today)
+    .neq("status", "cancelled")
+    .order("status");
+
+  if (!tasks || tasks.length === 0) {
+    await ctx.reply("Сегодня задач нет.");
+    return;
+  }
+
+  const statusLabel: Record<string, string> = {
+    draft: "Черновик",
+    sent: "Отправлено",
+    confirmed: "В работе",
+    completed: "Выполнено",
+    blocked: "Заблокировано",
+    incomplete: "Не выполнено",
+  };
+
+  let text = `Задачи на сегодня (${tasks.length}):\n\n`;
+  for (const t of tasks) {
+    const assignee = (t as any).assignee?.name || "не назначен";
+    const status = statusLabel[t.status] || t.status;
+    text += `${t.title}\n  ${assignee} / ${status}\n\n`;
+  }
+
+  await ctx.reply(text);
+});
+
+// --- /status command ---
+bot.command("status", async (ctx) => {
+  const chatId = ctx.chat.id;
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, project_id")
+    .eq("telegram_chat_id", chatId)
+    .single();
+
+  if (!user) {
+    await ctx.reply("Вы не зарегистрированы.");
+    return;
+  }
+
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Almaty" });
+
+  const { data: myTasks } = await supabase
+    .from("tasks")
+    .select("title, status")
+    .eq("assigned_to", user.id)
+    .eq("due_date", today)
+    .neq("status", "cancelled");
+
+  if (!myTasks || myTasks.length === 0) {
+    await ctx.reply("У вас нет задач на сегодня.");
+    return;
+  }
+
+  const statusLabel: Record<string, string> = {
+    draft: "Черновик",
+    sent: "Ожидает",
+    confirmed: "В работе",
+    completed: "Выполнено",
+    blocked: "Заблокировано",
+  };
+
+  let text = `Мои задачи (${myTasks.length}):\n\n`;
+  for (const t of myTasks) {
+    text += `${t.title} / ${statusLabel[t.status] || t.status}\n`;
+  }
+
+  await ctx.reply(text);
+});
+
 // --- Callback queries (button presses) ---
 bot.on("callback_query:data", async (ctx) => {
-  const data = ctx.callbackQuery.data;
+  try {
+  const action = ctx.callbackQuery.data;
   const chatId = ctx.chat?.id;
   if (!chatId) return;
 
@@ -82,21 +182,38 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
-  // Find the active task for this worker from the message
+  // Find the task: try by telegram_message_id first, fallback to most recent sent task
   const messageId = ctx.callbackQuery.message?.message_id;
-  const { data: task } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("assigned_to", worker.id)
-    .eq("telegram_message_id", messageId)
-    .single();
+  let task: any = null;
+
+  if (messageId) {
+    const { data: found } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("assigned_to", worker.id)
+      .eq("telegram_message_id", messageId)
+      .single();
+    task = found;
+  }
+
+  if (!task) {
+    const { data: found } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("assigned_to", worker.id)
+      .in("status", ["sent", "confirmed"])
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single();
+    task = found;
+  }
 
   if (!task) {
     await ctx.answerCallbackQuery({ text: "Задача не найдена." });
     return;
   }
 
-  if (data === "confirm") {
+  if (action === "confirm") {
     // Idempotency: already confirmed?
     if (task.status === "confirmed" || task.status === "completed") {
       await ctx.answerCallbackQuery({ text: "Уже принято!" });
@@ -114,11 +231,22 @@ bot.on("callback_query:data", async (ctx) => {
       update_type: "confirmed",
     });
 
-    await ctx.answerCallbackQuery({ text: "✅ Принято!" });
-    await ctx.editMessageReplyMarkup({ reply_markup: undefined });
+    try {
+      await ctx.answerCallbackQuery({ text: "Принято!" });
+      await ctx.editMessageReplyMarkup({ reply_markup: undefined });
+      // Send follow-up with "Готово" button
+      const { text: confirmText, keyboard: confirmKb } = confirmedMessage(task.title);
+      const sentMsg = await ctx.reply(confirmText, { reply_markup: confirmKb });
+      await supabase
+        .from("tasks")
+        .update({ telegram_message_id: sentMsg.message_id })
+        .eq("id", task.id);
+    } catch (e) {
+      console.error("Telegram callback response error:", e);
+    }
   }
 
-  if (data === "complete") {
+  if (action === "complete") {
     if (task.status === "completed") {
       await ctx.answerCallbackQuery({ text: "Уже завершено!" });
       return;
@@ -135,14 +263,18 @@ bot.on("callback_query:data", async (ctx) => {
     }
   }
 
-  if (data === "question") {
+  if (action === "question") {
     await ctx.answerCallbackQuery();
     await ctx.reply("Напишите ваш вопрос текстом, и прораб получит уведомление.");
   }
 
-  if (data === "problem") {
+  if (action === "problem") {
     await ctx.answerCallbackQuery();
     await ctx.reply("Опишите проблему текстом или отправьте голосовое сообщение.");
+  }
+  } catch (e) {
+    console.error("Callback handler error:", e);
+    try { await ctx.answerCallbackQuery(); } catch {}
   }
 });
 
@@ -449,7 +581,7 @@ export async function sendTaskToWorker(taskId: string) {
   const { data: task } = await supabase
     .from("tasks")
     .select(
-      "*, assignee:users!tasks_assigned_to_fkey(telegram_chat_id, name), dependency:tasks!tasks_depends_on_fkey(title, assigned_to)"
+      "*, assignee:users!tasks_assigned_to_fkey(telegram_chat_id, name)"
     )
     .eq("id", taskId)
     .single();
@@ -462,7 +594,13 @@ export async function sendTaskToWorker(taskId: string) {
   try {
     // Check if blocked by dependency
     if (task.depends_on && task.status === "blocked") {
-      const depTitle = (task as any).dependency?.title || "—";
+      // Fetch dependency title separately
+      const { data: dep } = await supabase
+        .from("tasks")
+        .select("title")
+        .eq("id", task.depends_on)
+        .single();
+      const depTitle = dep?.title || "задача";
       const { text } = blockedTaskMessage({
         title: task.title,
         dependency_title: depTitle,

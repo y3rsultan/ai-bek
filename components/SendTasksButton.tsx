@@ -22,7 +22,7 @@ export default function SendTasksButton({
       alert(
         `Отправлено: ${result.sent}, Заблокировано: ${result.blocked}`
       );
-      router.refresh();
+      window.location.reload();
     } catch {
       alert("Ошибка при отправке");
     } finally {
@@ -34,7 +34,7 @@ export default function SendTasksButton({
     <button
       onClick={handleSend}
       disabled={sending || draftCount === 0}
-      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
+      className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
     >
       {sending
         ? "Отправка..."

@@ -1,21 +1,29 @@
 {
-  "name": "AI Bek — Управление задачами",
+  "name": "AI Bek",
   "short_name": "AI Bek",
-  "description": "Голосовой менеджер задач для стройплощадки",
+  "description": "Управление задачами стройплощадки",
   "start_url": "/ru",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#1e293b",
+  "background_color": "#2563eb",
   "theme_color": "#2563eb",
   "orientation": "portrait",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png"
     }
   ]

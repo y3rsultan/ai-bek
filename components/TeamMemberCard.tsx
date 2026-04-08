@@ -88,34 +88,36 @@ export default function TeamMemberCard({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-center justify-between">
-      <div>
-        <div className="font-medium text-sm">{member.name}</div>
-        <div className="text-xs text-slate-500">
-          {roleLabel}
-          {member.telegram_chat_id && " / Telegram подключён"}
-          {member.telegram_blocked && " / Заблокирован"}
+    <div className="bg-white rounded-lg border border-slate-200 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="font-medium text-sm">{member.name}</div>
+          <div className="text-xs text-slate-500">
+            {roleLabel}
+            {member.telegram_chat_id && " / Telegram подключён"}
+            {member.telegram_blocked && " / Заблокирован"}
+          </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex gap-2">
         {!member.telegram_chat_id && member.invite_code && (
           <a
             href={`https://t.me/${botUsername}?start=${member.invite_code}`}
             target="_blank"
-            className="text-xs text-blue-600 underline"
+            className="text-xs text-blue-600 underline py-1"
           >
             Пригласить
           </a>
         )}
         <button
           onClick={() => setEditing(true)}
-          className="text-xs text-slate-500 hover:text-blue-600 px-2 py-1"
+          className="text-xs text-slate-500 hover:text-blue-600 py-1"
         >
           Изменить
         </button>
         <button
           onClick={handleDelete}
-          className="text-xs text-slate-400 hover:text-red-600 px-2 py-1"
+          className="text-xs text-slate-400 hover:text-red-600 py-1"
         >
           Удалить
         </button>
