@@ -11,6 +11,7 @@ import {
   completedWithPhotoMessage,
 } from "./messages";
 import { createClient } from "@supabase/supabase-js";
+import { notifyForeman } from "./notify";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -244,6 +245,16 @@ bot.on("callback_query:data", async (ctx) => {
     } catch (e) {
       console.error("Telegram callback response error:", e);
     }
+
+    // Notify foreman
+    const { data: workerInfo } = await supabase
+      .from("users")
+      .select("name, project_id")
+      .eq("id", worker.id)
+      .single();
+    if (workerInfo) {
+      notifyForeman(workerInfo.project_id, workerInfo.name, task.title, "confirmed");
+    }
   }
 
   if (action === "complete") {
@@ -455,6 +466,23 @@ bot.on("message:photo", async (ctx) => {
     // Check for dependent tasks to unlock
     await unlockDependents(taskId);
 
+    // Notify foreman
+    const { data: completedTask } = await supabase
+      .from("tasks")
+      .select("title, project_id")
+      .eq("id", taskId)
+      .single();
+    if (completedTask) {
+      const { data: wInfo } = await supabase
+        .from("users")
+        .select("name")
+        .eq("id", worker.id)
+        .single();
+      if (wInfo) {
+        notifyForeman(completedTask.project_id, wInfo.name, completedTask.title, "completed");
+      }
+    }
+
     await ctx.reply(completedWithPhotoMessage());
     return;
   }
@@ -499,6 +527,12 @@ bot.on("message:voice", async (ctx) => {
 
 // --- Helper: complete a task ---
 async function completeTask(taskId: string, userId: string) {
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("title, project_id")
+    .eq("id", taskId)
+    .single();
+
   await supabase
     .from("tasks")
     .update({
@@ -514,6 +548,18 @@ async function completeTask(taskId: string, userId: string) {
   });
 
   await unlockDependents(taskId);
+
+  // Notify foreman
+  if (task) {
+    const { data: workerInfo } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", userId)
+      .single();
+    if (workerInfo) {
+      notifyForeman(task.project_id, workerInfo.name, task.title, "completed");
+    }
+  }
 }
 
 // --- Helper: unlock dependent tasks and notify workers ---

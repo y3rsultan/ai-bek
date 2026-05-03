@@ -37,7 +37,10 @@
       "Bash(magick /Users/yz/Downloads/ai-bek/public/icons/icon-512.png -resize 192x192 /Users/yz/Downloads/ai-bek/public/icons/icon-192.png)",
       "Bash(magick /Users/yz/Downloads/ai-bek/public/icons/icon-512.png -resize 180x180 /Users/yz/Downloads/ai-bek/public/icons/apple-touch-icon.png)",
       "Bash(magick /Users/yz/Downloads/ai-bek/public/icons/icon-512.png -resize 32x32 /Users/yz/Downloads/ai-bek/public/icons/favicon-32.png)",
-      "Bash(npx shadcn@latest init -d)"
+      "Bash(npx shadcn@latest init -d)",
+      "Bash(npx shadcn@latest add card badge tabs -o)",
+      "Bash(gh api:*)",
+      "Bash(git remote:*)"
     ]
   }
 }

@@ -16,8 +16,9 @@ export default function Nav({ locale }: { locale: string }) {
     { href: `/${locale}`, label: "Дашборд" },
     { href: `/${locale}/tasks/new`, label: "Задача" },
     { href: `/${locale}/voice`, label: "Голос" },
-    { href: `/${locale}/team`, label: "Команда" },
+    { href: `/${locale}/analytics`, label: "Аналитика" },
     { href: `/${locale}/reports`, label: "Отчёты" },
+    { href: `/${locale}/team`, label: "Команда" },
     { href: `/${locale}/settings`, label: "Настройки" },
   ];
 

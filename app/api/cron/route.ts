@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { bot } from "@/lib/telegram/bot";
 import { reminderMessage, eodMessage } from "@/lib/telegram/messages";
 import { generateDailyReport, formatReportText } from "@/lib/reports/generate";
+import { sendMorningDigests, sendEveningSummary } from "@/lib/telegram/notify";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -41,9 +42,15 @@ export async function GET(req: NextRequest) {
     let reminders = 0;
     let eodSent = 0;
     let reports = 0;
+    let morningDigests = 0;
 
     for (const project of projects) {
       const settings = project.settings || {};
+
+      // --- Morning digest (8:00 Almaty) ---
+      if (currentTime === "08:00") {
+        morningDigests += await sendMorningDigests(project.id);
+      }
       const reminderFreq = settings.reminder_frequency_min || 120;
       const eodTime = settings.eod_prompt_time || "16:30";
 
@@ -154,6 +161,11 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      // --- Evening summary ---
+      if (currentTime === eodTime) {
+        await sendEveningSummary(project.id);
+      }
+
       // --- Auto-report at EOD ---
       if (currentTime === eodTime) {
         const { data: director } = await supabase
@@ -197,6 +209,7 @@ export async function GET(req: NextRequest) {
       ok: true,
       time: currentTime,
       reminders,
+      morningDigests,
       eodSent,
       reports,
     });
